@@ -56,3 +56,18 @@ test("builds GitHub-style slugs with duplicate suffixes", () => {
   const doc = parseMarkdown("# Usage\n## Usage\n## The `inspectFile()` API\n## FAQ & Help\n## Привет, мир!\n");
   assert.deepEqual(headingSlugs(doc.headings), ["usage", "usage-1", "the-inspectfile-api", "faq--help", "привет-мир"]);
 });
+
+test("treats HTML <h1>-<h6> as headings, using img alt text when needed", () => {
+  const doc = parseMarkdown('<h1 align="center"><a href="/"><img alt="tldr-pages" src="b.png"></a></h1>\n<h2>Install</h2>\n## Usage\n');
+  assert.deepEqual(doc.headings.map((h) => [h.level, h.text]), [[1, "tldr-pages"], [2, "Install"], [2, "Usage"]]);
+});
+
+test("finds multi-line HTML headings with the right line number, but not inside code", () => {
+  const doc = parseMarkdown("intro\n<h2>\n  <a href=\"x\">Supercharge</a>\n  <sup>Mac</sup>\n</h2>\n```html\n<h1>code</h1>\n```\n");
+  assert.deepEqual(doc.headings, [{ level: 2, text: "Supercharge Mac", line: 2 }]);
+});
+
+test("indented HTML and paragraph continuations are not treated as code", () => {
+  const md = "<div>\n\t<a href=\"https://x.dev\">x</a>\n</div>\n\ntext\n    [cont](c.md)\n\n    [code](d.md)\n";
+  assert.deepEqual(parseMarkdown(md).links.map((l) => l.url), ["https://x.dev", "c.md"]);
+});

@@ -1,13 +1,15 @@
 #!/usr/bin/env node
 import { existsSync } from "node:fs";
-import { exitCode, inspectFile, inspectFileWithRemote, render, type Format } from "./index.js";
+import { exitCode, inspectFile, inspectFileWithRemote, inspectRepo, parseRepoSpec, render, type Format } from "./index.js";
 
 const HELP = `Usage: readme-inspector [file] [options]
 
 Audits a README for broken links, missing images and Markdown structure.
 
 Arguments:
-  file            Markdown file to inspect (default: README.md)
+  file            Markdown file to inspect (default: README.md), or a GitHub
+                  repository as github:owner/repo or https://github.com/owner/repo
+                  (uses GITHUB_TOKEN when set)
 
 Options:
   --check-remote  also request every http(s) link and image
@@ -59,6 +61,17 @@ export async function main(argv: string[]): Promise<number> {
     }
   }
   const file = args[0] ?? "README.md";
+  const repo = parseRepoSpec(file);
+  if (repo) {
+    try {
+      const report = await inspectRepo(repo, { token: process.env.GITHUB_TOKEN });
+      console.log(render(report, format, !flags.has("--no-color") && process.stdout.isTTY));
+      return exitCode(report, flags.has("--strict"));
+    } catch (e) {
+      console.error(`readme-inspector: ${(e as Error).message}`);
+      return 2;
+    }
+  }
   if (!existsSync(file)) {
     console.error(`readme-inspector: file not found: ${file}`);
     return 2;
