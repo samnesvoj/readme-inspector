@@ -35,6 +35,8 @@ npm link        # makes `readme-inspector` available on your PATH
 ```bash
 readme-inspector                 # inspects ./README.md
 readme-inspector docs/index.md   # any Markdown file
+readme-inspector github:owner/repo                 # a repository's README, no clone needed
+readme-inspector https://github.com/owner/repo     # same, from a URL
 readme-inspector --strict        # treat warnings as failures (useful in CI)
 readme-inspector --check-remote  # also request every http(s) link and image
 ```
@@ -49,7 +51,13 @@ readme-inspector --check-remote  # also request every http(s) link and image
 | `-h`, `--help` | show help |
 | `-v`, `--version` | print the version |
 
-Exit codes: `0` no errors, `1` problems found, `2` usage error (missing file, unknown option).
+Exit codes: `0` no errors, `1` problems found, `2` usage error (missing file, unknown option, GitHub API error).
+
+### GitHub repositories
+
+With `github:owner/repo` the README is fetched through the GitHub API and relative links and images are checked
+against the repository's file tree, so you can audit any public project without cloning it. Set `GITHUB_TOKEN`
+to avoid the unauthenticated rate limit (60 requests per hour; each inspection uses two).
 
 ## What it checks
 
@@ -69,7 +77,8 @@ Exit codes: `0` no errors, `1` problems found, `2` usage error (missing file, un
 | `image-alt` | warning | a Markdown image without alt text |
 | `empty-link-text` | warning | a link with no visible text |
 
-Content inside fenced code blocks, indented code and inline code spans is ignored.
+HTML headings (`<h1>`…`<h6>`, including multi-line ones and logo titles like `<h1><img alt="Name"></h1>`) count as
+headings. Content inside fenced code blocks, indented code and inline code spans is ignored.
 
 ## Use it in CI
 

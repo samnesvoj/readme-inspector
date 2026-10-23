@@ -5,11 +5,13 @@ import type { Report } from "./report.js";
 import { checkRemote, type RemoteOptions } from "./remote.js";
 
 export { headingSlugs, parseMarkdown } from "./parse.js";
-export { checkAnchors, checkLocalFiles, checkStructure } from "./checks.js";
+export { checkAnchors, checkLocalFiles, checkRelativeTargets, checkStructure } from "./checks.js";
 export type { Issue, Severity } from "./checks.js";
 export { exitCode, formatJson, formatMarkdown, formatText, render } from "./report.js";
 export type { Format, Report } from "./report.js";
 export { checkRemote } from "./remote.js";
+export { inspectRepo, parseRepoSpec } from "./github.js";
+export type { GitHubOptions, RepoRef } from "./github.js";
 export type { RemoteOptions } from "./remote.js";
 
 /** Run every offline check against a README file. */

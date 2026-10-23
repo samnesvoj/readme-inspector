@@ -32,6 +32,7 @@ const REF_DEF = /^\s{0,3}\[([^\]]+)\]:\s*<?([^\s>]+)>?/;
 const INLINE = /(!?)\[((?:\\.|[^\]\\])*)\]\(\s*<?([^\s)>]*)>?(?:\s+["'(][^)]*["')])?\s*\)/g;
 const REF_USE = /(!?)\[((?:\\.|[^\]\\])+)\]\[([^\]]*)\]/g;
 const AUTOLINK = /<(https?:\/\/[^>\s]+)>/g;
+const HTML_HEADING = /<h([1-6])\b[^>]*>([\s\S]*?)<\/h\1\s*>/gi;
 const HTML_ANCHOR = /<[a-z][^>]*?\b(?:id|name)\s*=\s*["']([^"']+)["']/gi;
 const HTML_ATTR = /<(a|img|source)\b[^>]*?\b(href|src|srcset)\s*=\s*["']([^"']+)["']/gi;
 
@@ -51,7 +52,11 @@ export function parseMarkdown(source: string): ParsedDoc {
   const refUses: { kind: LinkKind; label: string; text: string; line: number }[] = [];
 
   let fence: string | null = null;
+  const prose: string[] = []; // the document with code lines blanked, for multi-line HTML
+  let prevBlank = true;
+  let inIndentedCode = false;
   lines.forEach((raw, i) => {
+    prose.push("");
     const lineNo = i + 1;
     const f = raw.match(FENCE);
     if (f) {
@@ -61,9 +66,18 @@ export function parseMarkdown(source: string): ParsedDoc {
       return;
     }
     if (fence !== null) return;
-    if (/^( {4}|\t)/.test(raw) && raw.trim() !== "") return; // indented code block
+    // Indented code: 4+ spaces or a tab, but (as in CommonMark) it cannot interrupt a paragraph,
+    // and indented lines that start with an HTML tag belong to an HTML block.
+    const indented = /^( {4}|\t)/.test(raw) && raw.trim() !== "";
+    if (indented && (inIndentedCode || prevBlank) && !raw.trimStart().startsWith("<")) {
+      inIndentedCode = true;
+      return;
+    }
+    inIndentedCode = false;
+    prevBlank = raw.trim() === "";
 
     const line = blankInlineCode(raw);
+    prose[i] = line;
 
     const def = line.match(REF_DEF);
     if (def) {
@@ -94,6 +108,18 @@ export function parseMarkdown(source: string): ParsedDoc {
       for (const url of urls) if (url) links.push({ kind, source: "html", text: "", url, line: lineNo });
     }
   });
+
+  // HTML headings may span several lines, so they are matched on the whole document.
+  const text = prose.join("\n");
+  for (const m of text.matchAll(HTML_HEADING)) {
+    // <h1><img alt="Project"></h1> is a common logo title: fall back to the alt text.
+    const inner = m[2]!;
+    const plain = inner.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
+    const alt = inner.match(/\balt\s*=\s*["']([^"']*)["']/i)?.[1] ?? "";
+    const line = text.slice(0, m.index).split("\n").length;
+    headings.push({ level: Number(m[1]), text: plain || alt.trim(), line });
+  }
+  headings.sort((a, b) => a.line - b.line);
 
   const undefinedRefs: ParsedDoc["undefinedRefs"] = [];
   for (const use of refUses) {

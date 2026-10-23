@@ -70,13 +70,19 @@ function safeDecode(s: string): string {
 /** Local links and images must point at files that exist next to the README. */
 export function checkLocalFiles(doc: ParsedDoc, readmePath: string): Issue[] {
   const base = dirname(resolve(readmePath));
+  return checkRelativeTargets(doc, (path) =>
+    existsSync(path.startsWith("/") ? resolve(base, "." + path) : resolve(base, path)),
+  );
+}
+
+/** Shared rule for relative links: `exists` receives the decoded path as written in the README. */
+export function checkRelativeTargets(doc: ParsedDoc, exists: (path: string) => boolean): Issue[] {
   const issues: Issue[] = [];
   for (const l of doc.links) {
     if (!l.url || isRemote(l.url) || l.url.startsWith("#")) continue;
     const path = safeDecode(l.url.replace(/[?#].*$/, ""));
     if (path === "") continue;
-    const target = path.startsWith("/") ? resolve(base, "." + path) : resolve(base, path);
-    if (!existsSync(target)) {
+    if (!exists(path)) {
       issues.push({
         severity: "error",
         rule: l.kind === "image" ? "missing-image" : "broken-local-link",
