@@ -7,8 +7,8 @@ import { checkRemote, type RemoteOptions } from "./remote.js";
 export { headingSlugs, parseMarkdown } from "./parse.js";
 export { checkAnchors, checkLocalFiles, checkStructure } from "./checks.js";
 export type { Issue, Severity } from "./checks.js";
-export { formatText, exitCode } from "./report.js";
-export type { Report } from "./report.js";
+export { exitCode, formatJson, formatMarkdown, formatText, render } from "./report.js";
+export type { Format, Report } from "./report.js";
 export { checkRemote } from "./remote.js";
 export type { RemoteOptions } from "./remote.js";
 
