@@ -1,0 +1,51 @@
+name: readme-inspector
+description: Audit a README for broken links, missing images, undefined references and Markdown structure problems.
+author: samnesvoj
+branding:
+  icon: book-open
+  color: purple
+
+inputs:
+  path:
+    description: Markdown file to inspect.
+    default: README.md
+  strict:
+    description: Fail on warnings as well as errors.
+    default: "false"
+  check-remote:
+    description: Also request every http(s) link and image.
+    default: "false"
+  summary:
+    description: Add the report to the job summary.
+    default: "true"
+
+runs:
+  using: composite
+  steps:
+    - uses: actions/setup-node@v4
+      with:
+        node-version: 20
+    - name: Build readme-inspector
+      shell: bash
+      run: |
+        cd "$GITHUB_ACTION_PATH"
+        npm ci --no-audit --no-fund --ignore-scripts
+        npx tsc -p tsconfig.json
+    - name: Inspect
+      shell: bash
+      env:
+        RI_PATH: ${{ inputs.path }}
+        RI_STRICT: ${{ inputs.strict }}
+        RI_REMOTE: ${{ inputs.check-remote }}
+        RI_SUMMARY: ${{ inputs.summary }}
+      run: |
+        args=("$RI_PATH")
+        [ "$RI_STRICT" = "true" ] && args+=(--strict)
+        [ "$RI_REMOTE" = "true" ] && args+=(--check-remote)
+        cli="$GITHUB_ACTION_PATH/dist/src/cli.js"
+        status=0
+        node "$cli" "${args[@]}" || status=$?
+        if [ "$RI_SUMMARY" = "true" ]; then
+          node "$cli" "${args[@]}" --format markdown >> "$GITHUB_STEP_SUMMARY" || true
+        fi
+        exit $status
