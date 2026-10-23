@@ -1,0 +1,22 @@
+import { test } from "node:test";
+import assert from "node:assert/strict";
+import { spawnSync } from "node:child_process";
+
+const run = (...args: string[]) => spawnSync(process.execPath, ["dist/src/cli.js", ...args], { encoding: "utf8" });
+
+test("exits 0 and prints a summary for a clean file", () => {
+  const r = run("test/fixtures/good.md", "--no-color");
+  assert.equal(r.status, 0);
+  assert.match(r.stdout, /no problems found/);
+});
+
+test("exits 1 when errors are found", () => {
+  const r = run("test/fixtures/bad.md", "--no-color");
+  assert.equal(r.status, 1);
+  assert.match(r.stdout, /missing-image/);
+});
+
+test("exits 2 for a missing file or unknown option", () => {
+  assert.equal(run("nope.md").status, 2);
+  assert.equal(run("test/fixtures/good.md", "--bogus").status, 2);
+});

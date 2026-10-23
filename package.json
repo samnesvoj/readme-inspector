@@ -1,0 +1,34 @@
+{
+  "name": "readme-inspector",
+  "version": "0.1.0",
+  "description": "CLI that audits a README: broken links, missing images and Markdown structure.",
+  "type": "module",
+  "bin": {
+    "readme-inspector": "dist/src/cli.js"
+  },
+  "files": [
+    "dist/src"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "prepare": "tsc -p tsconfig.json",
+    "test": "npm run build && node --test dist/test/*.test.js",
+    "inspect": "node dist/src/cli.js"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "keywords": [
+    "readme",
+    "markdown",
+    "lint",
+    "links",
+    "cli"
+  ],
+  "author": "samnesvoj",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "^24.19.2",
+    "typescript": "5.9"
+  }
+}
