@@ -43,6 +43,7 @@ readme-inspector --check-remote  # also request every http(s) link and image
 |---|---|
 | `--check-remote` | request every `http(s)` link and image once (HEAD, falling back to GET) |
 | `--timeout <ms>` | per-request timeout for `--check-remote` (default `10000`) |
+| `--format <f>` | `text` (default), `json` for scripts, or `markdown` for PR comments and job summaries |
 | `--strict` | exit with code 1 on warnings as well as errors |
 | `--no-color` | disable ANSI colours |
 | `-h`, `--help` | show help |
@@ -74,6 +75,12 @@ Content inside fenced code blocks, indented code and inline code spans is ignore
 
 ```yaml
 - run: npx --yes github:samnesvoj/readme-inspector README.md --strict
+```
+
+Post the result to the GitHub Actions job summary:
+
+```yaml
+- run: npx --yes github:samnesvoj/readme-inspector README.md --format markdown >> "$GITHUB_STEP_SUMMARY"
 ```
 
 ## Use it as a library

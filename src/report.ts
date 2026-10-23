@@ -32,3 +32,39 @@ export function formatText(report: Report, color = false): string {
 
 export const exitCode = (report: Report, strict = false) =>
   report.issues.some((i) => i.severity === "error" || (strict && i.severity === "warning")) ? 1 : 0;
+
+export function formatJson(report: Report): string {
+  const errors = report.issues.filter((i) => i.severity === "error").length;
+  return JSON.stringify(
+    {
+      file: report.file,
+      stats: report.stats,
+      summary: { errors, warnings: report.issues.length - errors },
+      issues: [...report.issues].sort((a, b) => a.line - b.line),
+    },
+    null,
+    2,
+  );
+}
+
+/** A Markdown table, handy for pull request comments or job summaries. */
+export function formatMarkdown(report: Report): string {
+  const errors = report.issues.filter((i) => i.severity === "error").length;
+  const warnings = report.issues.length - errors;
+  const out = [`### readme-inspector · \`${report.file}\``, ""];
+  if (!report.issues.length) return [...out, "✅ No problems found."].join("\n");
+  out.push(`**${errors} error(s), ${warnings} warning(s)**`, "", "| Line | Severity | Rule | Message |", "|---:|---|---|---|");
+  for (const i of [...report.issues].sort((a, b) => a.line - b.line)) {
+    const msg = i.message.replace(/\|/g, "\\|");
+    out.push(`| ${i.line} | ${i.severity === "error" ? "❌ error" : "⚠️ warning"} | \`${i.rule}\` | ${msg} |`);
+  }
+  return out.join("\n");
+}
+
+export type Format = "text" | "json" | "markdown";
+
+export function render(report: Report, format: Format, color = false): string {
+  if (format === "json") return formatJson(report);
+  if (format === "markdown") return formatMarkdown(report);
+  return formatText(report, color);
+}

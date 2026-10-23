@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import { existsSync } from "node:fs";
-import { exitCode, formatText, inspectFile, inspectFileWithRemote } from "./index.js";
+import { exitCode, inspectFile, inspectFileWithRemote, render, type Format } from "./index.js";
 
 const HELP = `Usage: readme-inspector [file] [options]
 
@@ -12,6 +12,7 @@ Arguments:
 Options:
   --check-remote  also request every http(s) link and image
   --timeout <ms>  per-request timeout for --check-remote (default: 10000)
+  --format <f>    output format: text (default), json or markdown
   --strict        exit with code 1 on warnings too
   --no-color      disable ANSI colours
   -h, --help      show this help
@@ -28,6 +29,17 @@ export async function main(argv: string[]): Promise<number> {
       return 2;
     }
     argv.splice(t, 2);
+  }
+  let format: Format = "text";
+  const fi = argv.indexOf("--format");
+  if (fi >= 0) {
+    const value = argv[fi + 1];
+    if (value !== "text" && value !== "json" && value !== "markdown") {
+      console.error("--format expects one of: text, json, markdown");
+      return 2;
+    }
+    format = value;
+    argv.splice(fi, 2);
   }
   const args = argv.filter((a) => !a.startsWith("-"));
   const flags = new Set(argv.filter((a) => a.startsWith("-")));
@@ -52,7 +64,7 @@ export async function main(argv: string[]): Promise<number> {
     return 2;
   }
   const report = flags.has("--check-remote") ? await inspectFileWithRemote(file, { timeoutMs }) : inspectFile(file);
-  console.log(formatText(report, !flags.has("--no-color") && process.stdout.isTTY));
+  console.log(render(report, format, !flags.has("--no-color") && process.stdout.isTTY));
   return exitCode(report, flags.has("--strict"));
 }
 

@@ -24,3 +24,13 @@ test("exits 2 for a missing file or unknown option", () => {
 test("rejects an invalid --timeout", () => {
   assert.equal(run("test/fixtures/good.md", "--check-remote", "--timeout", "abc").status, 2);
 });
+
+test("--format json prints parseable JSON and keeps the exit code", () => {
+  const r = run("test/fixtures/bad.md", "--format", "json");
+  assert.equal(r.status, 1);
+  assert.equal(JSON.parse(r.stdout).summary.errors, 4);
+});
+
+test("rejects an unknown --format", () => {
+  assert.equal(run("test/fixtures/good.md", "--format", "xml").status, 2);
+});
