@@ -36,10 +36,13 @@ npm link        # makes `readme-inspector` available on your PATH
 readme-inspector                 # inspects ./README.md
 readme-inspector docs/index.md   # any Markdown file
 readme-inspector --strict        # treat warnings as failures (useful in CI)
+readme-inspector --check-remote  # also request every http(s) link and image
 ```
 
 | Option | Description |
 |---|---|
+| `--check-remote` | request every `http(s)` link and image once (HEAD, falling back to GET) |
+| `--timeout <ms>` | per-request timeout for `--check-remote` (default `10000`) |
 | `--strict` | exit with code 1 on warnings as well as errors |
 | `--no-color` | disable ANSI colours |
 | `-h`, `--help` | show help |
@@ -54,6 +57,8 @@ Exit codes: `0` no errors, `1` problems found, `2` usage error (missing file, un
 | `missing-image` | error | a local image (Markdown or HTML `src`/`srcset`) does not exist |
 | `broken-local-link` | error | a relative link points at a file that does not exist |
 | `broken-anchor` | error | an in-page link like `#usage` matches no heading slug or HTML `id`/`name` anchor |
+| `broken-remote-link` | error | with `--check-remote`: a URL returns 404 or 410 |
+| `unreachable-link` | warning | with `--check-remote`: timeout, network error or other HTTP error |
 | `undefined-reference` | error | `[text][label]` is used but `[label]: url` is never defined |
 | `empty-url` | error | a link or image with an empty target |
 | `missing-title` | warning | no top-level `#` heading |
