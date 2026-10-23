@@ -1,6 +1,6 @@
 import { existsSync } from "node:fs";
 import { dirname, resolve } from "node:path";
-import type { ParsedDoc } from "./parse.js";
+import { headingSlugs, type ParsedDoc } from "./parse.js";
 
 export type Severity = "error" | "warning";
 
@@ -83,6 +83,20 @@ export function checkLocalFiles(doc: ParsedDoc, readmePath: string): Issue[] {
         message: `${l.kind === "image" ? "image" : "link"} target not found: ${l.url}`,
         line: l.line,
       });
+    }
+  }
+  return issues;
+}
+
+/** In-page links (#section) must match a heading slug or an explicit HTML anchor. */
+export function checkAnchors(doc: ParsedDoc): Issue[] {
+  const targets = new Set([...headingSlugs(doc.headings), ...doc.anchors.map((a) => a.toLowerCase())]);
+  const issues: Issue[] = [];
+  for (const l of doc.links) {
+    if (!l.url.startsWith("#") || l.url === "#") continue;
+    const id = safeDecode(l.url.slice(1)).toLowerCase();
+    if (!targets.has(id)) {
+      issues.push({ severity: "error", rule: "broken-anchor", message: `no heading or anchor matches ${l.url}`, line: l.line });
     }
   }
   return issues;

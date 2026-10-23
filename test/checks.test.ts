@@ -28,3 +28,7 @@ test("counts headings, links and images", () => {
 test("handles literal and encoded percent signs in local links", () => {
   assert.deepEqual(rules("percent.md"), ["3:broken-local-link"]);
 });
+
+test("validates in-page anchors against headings and HTML anchors", () => {
+  assert.deepEqual(rules("anchors.md"), ["4:broken-anchor"]);
+});
