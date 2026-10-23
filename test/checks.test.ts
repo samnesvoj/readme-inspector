@@ -24,3 +24,7 @@ test("reports structure and file problems with line numbers", () => {
 test("counts headings, links and images", () => {
   assert.deepEqual(inspectFile("test/fixtures/good.md").stats, { headings: 2, links: 2, images: 1 });
 });
+
+test("handles literal and encoded percent signs in local links", () => {
+  assert.deepEqual(rules("percent.md"), ["3:broken-local-link"]);
+});

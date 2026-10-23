@@ -58,13 +58,22 @@ export function checkStructure(doc: ParsedDoc): Issue[] {
   return issues;
 }
 
+/** decodeURIComponent that keeps the raw text when it is not valid percent-encoding (e.g. "100%.md"). */
+function safeDecode(s: string): string {
+  try {
+    return decodeURIComponent(s);
+  } catch {
+    return s;
+  }
+}
+
 /** Local links and images must point at files that exist next to the README. */
 export function checkLocalFiles(doc: ParsedDoc, readmePath: string): Issue[] {
   const base = dirname(resolve(readmePath));
   const issues: Issue[] = [];
   for (const l of doc.links) {
     if (!l.url || isRemote(l.url) || l.url.startsWith("#")) continue;
-    const path = decodeURIComponent(l.url.replace(/[?#].*$/, ""));
+    const path = safeDecode(l.url.replace(/[?#].*$/, ""));
     if (path === "") continue;
     const target = path.startsWith("/") ? resolve(base, "." + path) : resolve(base, path);
     if (!existsSync(target)) {
