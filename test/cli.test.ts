@@ -20,3 +20,7 @@ test("exits 2 for a missing file or unknown option", () => {
   assert.equal(run("nope.md").status, 2);
   assert.equal(run("test/fixtures/good.md", "--bogus").status, 2);
 });
+
+test("rejects an invalid --timeout", () => {
+  assert.equal(run("test/fixtures/good.md", "--check-remote", "--timeout", "abc").status, 2);
+});

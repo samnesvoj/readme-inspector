@@ -2,12 +2,15 @@ import { readFileSync } from "node:fs";
 import { checkAnchors, checkLocalFiles, checkStructure } from "./checks.js";
 import { parseMarkdown } from "./parse.js";
 import type { Report } from "./report.js";
+import { checkRemote, type RemoteOptions } from "./remote.js";
 
 export { headingSlugs, parseMarkdown } from "./parse.js";
 export { checkAnchors, checkLocalFiles, checkStructure } from "./checks.js";
 export type { Issue, Severity } from "./checks.js";
 export { formatText, exitCode } from "./report.js";
 export type { Report } from "./report.js";
+export { checkRemote } from "./remote.js";
+export type { RemoteOptions } from "./remote.js";
 
 /** Run every offline check against a README file. */
 export function inspectFile(path: string): Report {
@@ -21,4 +24,12 @@ export function inspectFile(path: string): Report {
       images: doc.links.filter((l) => l.kind === "image").length,
     },
   };
+}
+
+/** Offline checks plus remote URL checks. */
+export async function inspectFileWithRemote(path: string, opts?: RemoteOptions): Promise<Report> {
+  const report = inspectFile(path);
+  const doc = parseMarkdown(readFileSync(path, "utf8"));
+  report.issues.push(...(await checkRemote(doc, opts)));
+  return report;
 }
