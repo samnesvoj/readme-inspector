@@ -50,7 +50,7 @@ export async function main(argv: string[]): Promise<number> {
     return 0;
   }
   if (flags.has("-v") || flags.has("--version")) {
-    console.log("0.1.0");
+    console.log("0.2.0");
     return 0;
   }
   const known = new Set(["--strict", "--no-color", "--check-remote"]);

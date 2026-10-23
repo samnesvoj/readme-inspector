@@ -21,3 +21,25 @@ jobs:
       - run: npm test
       - name: Inspect our own README
         run: node dist/src/cli.js README.md --no-color
+
+  action:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run the action on our own README
+        uses: ./
+        with:
+          path: README.md
+          strict: true
+      - name: The action must fail on a broken README
+        id: broken
+        continue-on-error: true
+        uses: ./
+        with:
+          path: examples/broken/README.md
+          summary: false
+      - name: Check that it failed
+        if: steps.broken.outcome != 'failure'
+        run: |
+          echo "expected the action to fail on examples/broken/README.md"
+          exit 1

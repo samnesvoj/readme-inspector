@@ -1,7 +1,12 @@
 # readme-inspector
 
-A small, dependency-free CLI that audits a README before you publish it: broken local links,
-missing images, undefined references and Markdown structure problems — with line numbers.
+[![CI](https://github.com/samnesvoj/readme-inspector/actions/workflows/ci.yml/badge.svg)](https://github.com/samnesvoj/readme-inspector/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+![Node 20+](https://img.shields.io/badge/node-%3E%3D20-brightgreen)
+
+A small, dependency-free CLI and GitHub Action that audits a README before you publish it: broken local links,
+missing images, dead anchors, undefined references and Markdown structure problems — with line numbers.
+Point it at a file, or at any public GitHub repository without cloning it.
 
 ```console
 $ readme-inspector examples/broken/README.md
@@ -16,6 +21,21 @@ readme-inspector · examples/broken/README.md
   L7    error   link target not found: CONTRIBUTING.md (broken-local-link)
 
 3 error(s), 3 warning(s)
+```
+
+## Why
+
+READMEs rot quietly. Files get renamed and their links break, a heading is reworded and every `#anchor` pointing at
+it dies, a screenshot is deleted but still referenced. GitHub renders all of this without complaint.
+readme-inspector catches it in milliseconds, offline, with zero runtime dependencies — and optionally checks
+external URLs too.
+
+```console
+$ readme-inspector github:tldr-pages/tldr
+readme-inspector · github:tldr-pages/tldr/README.md
+9 headings · 39 links · 4 images
+
+✓ no problems found
 ```
 
 ## Install
@@ -82,14 +102,21 @@ headings. Content inside fenced code blocks, indented code and inline code spans
 
 ## Use it in CI
 
+As a GitHub Action — the report also lands in the job summary:
+
 ```yaml
-- run: npx --yes github:samnesvoj/readme-inspector README.md --strict
+- uses: actions/checkout@v4
+- uses: samnesvoj/readme-inspector@v0.2.0
+  with:
+    path: README.md        # default
+    strict: true           # fail on warnings too
+    check-remote: false    # set true to request external links
 ```
 
-Post the result to the GitHub Actions job summary:
+Or with npx in any CI:
 
 ```yaml
-- run: npx --yes github:samnesvoj/readme-inspector README.md --format markdown >> "$GITHUB_STEP_SUMMARY"
+- run: npx --yes github:samnesvoj/readme-inspector README.md --strict
 ```
 
 ## Use it as a library
