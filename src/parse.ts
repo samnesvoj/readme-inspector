@@ -20,6 +20,8 @@ export interface Link {
 export interface ParsedDoc {
   headings: Heading[];
   links: Link[];
+  /** Explicit HTML anchors: id="..." and <a name="...">. */
+  anchors: string[];
   /** Reference labels used as [text][label] that have no definition. */
   undefinedRefs: { label: string; line: number }[];
 }
@@ -30,6 +32,7 @@ const REF_DEF = /^\s{0,3}\[([^\]]+)\]:\s*<?([^\s>]+)>?/;
 const INLINE = /(!?)\[((?:\\.|[^\]\\])*)\]\(\s*<?([^\s)>]*)>?(?:\s+["'(][^)]*["')])?\s*\)/g;
 const REF_USE = /(!?)\[((?:\\.|[^\]\\])+)\]\[([^\]]*)\]/g;
 const AUTOLINK = /<(https?:\/\/[^>\s]+)>/g;
+const HTML_ANCHOR = /<[a-z][^>]*?\b(?:id|name)\s*=\s*["']([^"']+)["']/gi;
 const HTML_ATTR = /<(a|img|source)\b[^>]*?\b(href|src|srcset)\s*=\s*["']([^"']+)["']/gi;
 
 /** Replace inline code spans with spaces so their contents are never parsed. */
@@ -43,6 +46,7 @@ export function parseMarkdown(source: string): ParsedDoc {
   const lines = source.split(/\r?\n/);
   const headings: Heading[] = [];
   const links: Link[] = [];
+  const anchors: string[] = [];
   const refDefs = new Map<string, string>();
   const refUses: { kind: LinkKind; label: string; text: string; line: number }[] = [];
 
@@ -67,8 +71,10 @@ export function parseMarkdown(source: string): ParsedDoc {
       return;
     }
 
-    const h = line.match(ATX);
+    // Heading text comes from the raw line so inline code like `npm test` is kept.
+    const h = line.match(ATX) ? raw.match(ATX) : null;
     if (h) headings.push({ level: h[1]!.length, text: h[2]!.trim(), line: lineNo });
+    for (const m of line.matchAll(HTML_ANCHOR)) anchors.push(m[1]!);
 
     for (const m of line.matchAll(INLINE)) {
       links.push({ kind: m[1] ? "image" : "link", source: "markdown", text: m[2]!, url: m[3]!, line: lineNo });
@@ -96,5 +102,29 @@ export function parseMarkdown(source: string): ParsedDoc {
     else links.push({ kind: use.kind, source: "markdown", text: use.text, url, line: use.line });
   }
   links.sort((a, b) => a.line - b.line);
-  return { headings, links, undefinedRefs };
+  return { headings, links, anchors, undefinedRefs };
+}
+
+/** Strip inline Markdown so a heading reads like its rendered text. */
+function plainText(md: string): string {
+  return md
+    .replace(/!?\[([^\]]*)\]\([^)]*\)/g, "$1")
+    .replace(/<[^>]+>/g, "")
+    .replace(/[`*]/g, "")
+    .replace(/(^|\s)_+|_+(\s|$)/g, "$1$2");
+}
+
+/** GitHub-compatible heading slugs, including the -1, -2 suffixes for duplicates. */
+export function headingSlugs(headings: Heading[]): string[] {
+  const seen = new Map<string, number>();
+  return headings.map((h) => {
+    const base = plainText(h.text)
+      .toLowerCase()
+      .trim()
+      .replace(/[^\p{L}\p{M}\p{N}\p{Pc}\- ]/gu, "")
+      .replace(/ /g, "-");
+    const n = seen.get(base) ?? 0;
+    seen.set(base, n + 1);
+    return n === 0 ? base : `${base}-${n}`;
+  });
 }

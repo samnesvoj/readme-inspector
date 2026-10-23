@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { parseMarkdown } from "../src/parse.js";
+import { headingSlugs, parseMarkdown } from "../src/parse.js";
 
 test("extracts headings with levels and line numbers", () => {
   const doc = parseMarkdown("# Title\n\ntext\n\n## Section ##\n");
@@ -46,4 +46,13 @@ test("reads HTML href, src and every srcset candidate", () => {
 
 test("collects autolinks", () => {
   assert.deepEqual(parseMarkdown("see <https://auto.dev>").links.map((l) => l.url), ["https://auto.dev"]);
+});
+
+test("keeps inline code in heading text", () => {
+  assert.equal(parseMarkdown("## Run `npm test`").headings[0]!.text, "Run `npm test`");
+});
+
+test("builds GitHub-style slugs with duplicate suffixes", () => {
+  const doc = parseMarkdown("# Usage\n## Usage\n## The `inspectFile()` API\n## FAQ & Help\n## Привет, мир!\n");
+  assert.deepEqual(headingSlugs(doc.headings), ["usage", "usage-1", "the-inspectfile-api", "faq--help", "привет-мир"]);
 });

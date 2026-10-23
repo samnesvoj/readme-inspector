@@ -1,10 +1,10 @@
 import { readFileSync } from "node:fs";
-import { checkLocalFiles, checkStructure } from "./checks.js";
+import { checkAnchors, checkLocalFiles, checkStructure } from "./checks.js";
 import { parseMarkdown } from "./parse.js";
 import type { Report } from "./report.js";
 
-export { parseMarkdown } from "./parse.js";
-export { checkLocalFiles, checkStructure } from "./checks.js";
+export { headingSlugs, parseMarkdown } from "./parse.js";
+export { checkAnchors, checkLocalFiles, checkStructure } from "./checks.js";
 export type { Issue, Severity } from "./checks.js";
 export { formatText, exitCode } from "./report.js";
 export type { Report } from "./report.js";
@@ -14,7 +14,7 @@ export function inspectFile(path: string): Report {
   const doc = parseMarkdown(readFileSync(path, "utf8"));
   return {
     file: path,
-    issues: [...checkStructure(doc), ...checkLocalFiles(doc, path)],
+    issues: [...checkStructure(doc), ...checkLocalFiles(doc, path), ...checkAnchors(doc)],
     stats: {
       headings: doc.headings.length,
       links: doc.links.filter((l) => l.kind === "link").length,

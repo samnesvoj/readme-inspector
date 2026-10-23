@@ -53,6 +53,7 @@ Exit codes: `0` no errors, `1` problems found, `2` usage error (missing file, un
 |---|---|---|
 | `missing-image` | error | a local image (Markdown or HTML `src`/`srcset`) does not exist |
 | `broken-local-link` | error | a relative link points at a file that does not exist |
+| `broken-anchor` | error | an in-page link like `#usage` matches no heading slug or HTML `id`/`name` anchor |
 | `undefined-reference` | error | `[text][label]` is used but `[label]: url` is never defined |
 | `empty-url` | error | a link or image with an empty target |
 | `missing-title` | warning | no top-level `#` heading |
